@@ -16,7 +16,7 @@ window.addEventListener("resize", resizeWindow);
 resizeWindow(); // Initial resize
 
 // Setup game here
-const player = new Player();
+const player = new Player(ctx);
 const game = new Game(ctx, player);
 
 game.gameLoop();

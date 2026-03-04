@@ -11,17 +11,18 @@ class Game {
         window.addEventListener("keyup", e => this.keys[e.key] = false); // Unset keys
     }
 
+    // Renders next frame, and also updates respective attributes
     nextFrame = () => {
         this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+        this.ctx.fillStyle = "blue";
+        this.ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
         // Update attributes
         this.objects.forEach(i => {
             i.update(this.keys);
+            i.draw();
         });
-
-        // Draw code
-        this.ctx.fillStyle = "blue";
-        this.ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
         requestAnimationFrame(this.nextFrame);
     }

@@ -1,13 +1,18 @@
 class Player {
-    constructor() {
+    constructor(ctx) {
+        this.ctx = ctx;
+
         this.hp = 1;
-        this.x = 10; // Will we even use it?
-        this.y = 0;
+
+        // These are test values!!!
+        this.x = 50; // Will we even use it?
+        this.y = 50;
     }
 
     // Draw the player and shit
     draw() {
-
+        this.ctx.fillStyle = "black";
+        this.ctx.fillRect(this.x, this.y, 10, 10);
     }
 
     // Update player attributes such as movement

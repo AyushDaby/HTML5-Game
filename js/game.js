@@ -3,7 +3,7 @@ class Game {
         this.ctx = ctx;
 
         // Argument player is an object of class Player
-        this.gravity = 0.981;
+        this.gravity = 0.5;
         this.objects = [player]; // Players, Enemies and all that go in here
 
         this.keys = {};
@@ -20,7 +20,7 @@ class Game {
 
         // Update attributes
         this.objects.forEach(i => {
-            i.update(this.keys);
+            i.update(this);
             i.draw();
         });
 

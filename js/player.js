@@ -1,6 +1,8 @@
 class Player {
     constructor() {
-        this.hp = 100;
+        this.hp = 1;
+        this.x = 10; // Will we even use it?
+        this.y = 0;
     }
 
     // Draw the player and shit

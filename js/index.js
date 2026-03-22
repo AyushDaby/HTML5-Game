@@ -1,5 +1,6 @@
 import Game from "./game.js";
 import Player from "./player.js";
+import Collectable from "./collectable.js";
 
 // Retrieve canvas and drawing tool
 const canvas = document.getElementById("game");
@@ -17,10 +18,5 @@ resizeWindow(); // Initial resize
 
 // Create objects
 const player = new Player(ctx);
-const game = new Game(ctx, player);
-
-// Pass canvas size
-game.width  = canvas.width;
-game.height = canvas.height;
-
+const game = new Game(ctx, canvas.width, canvas.height, player);
 game.start();

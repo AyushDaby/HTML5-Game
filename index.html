@@ -3,14 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <title>A game about a Mauritius Parakeet</title>
-
-    <link rel="stylesheet" href="/css/main.css">
+    <title>Jungle Adventure Home</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #1a2a1a; cursor: default; }
+        canvas { display: block; }
+    </style>
 </head>
-
 <body>
-    <h1>A game about a Mauritius Parakeet</h1>
-    <button onclick="window.location.href='/game.html'">Play</button>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let img = new Image();
+    img.src = 'assets/homescreen.png'; 
+
+    let mouse = { x: 0, y: 0 };
+    let canvasWidth, canvasHeight;
+    let hoveredBtn = null;
+
+    function init() {
+        resize();
+        window.addEventListener('resize', resize);
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('click', handleClick);
+        animate();
+    }
+
+    function resize() {
+        canvasWidth = canvas.width = window.innerWidth;
+        canvasHeight = canvas.height = window.innerHeight;
+    }
+
+    function handleMouseMove(e) {
+        mouse.x = (e.clientX - canvasWidth / 2) / (canvasWidth / 2);
+        mouse.y = (e.clientY - canvasHeight / 2) / (canvasHeight / 2);
+
+        const centerX = canvasWidth / 2;
+        const startY = canvasHeight * 0.65;
+        const howToY = canvasHeight * 0.78;
+
+        if (isInsideRect(e.clientX, e.clientY, centerX - 110, startY - 30, 220, 60)) {
+            hoveredBtn = 'start';
+        } else if (isInsideRect(e.clientX, e.clientY, centerX - 110, howToY - 30, 220, 60)) {
+            hoveredBtn = 'howtoplay';
+        } else {
+            hoveredBtn = null;
+        }
+        canvas.style.cursor = hoveredBtn ? 'pointer' : 'default';
+    }
+
+    function isInsideRect(x, y, rx, ry, rw, rh) {
+        return x >= rx && x <= rx + rw && y >= ry && y <= ry + rh;
+    }
+
+    function handleClick() {
+        if (hoveredBtn === 'start') window.location.href = 'game.html';
+        if (hoveredBtn === 'howtoplay') alert("Use WASD to move and Space to jump!");
+    }
+
+    function drawWoodPanel(x, y, w, h, text, isHovered) {
+        ctx.save();
+        ctx.translate(x, y);
+
+        const woodGrad = ctx.createLinearGradient(0, 0, 0, h);
+        woodGrad.addColorStop(0, "#8B4513");
+        woodGrad.addColorStop(0.5, "#633311");
+        woodGrad.addColorStop(1, "#4d260b");
+
+        ctx.fillStyle = isHovered ? "#A0522D" : woodGrad;
+        ctx.strokeStyle = "#2d1606";
+        ctx.lineWidth = 4;
+
+        ctx.beginPath();
+        ctx.rect(-w/2, -h/2, w, h);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#333";
+        ctx.beginPath();
+        const padding = 6;
+        ctx.arc(-w/2 + padding, -h/2 + padding, 2, 0, Math.PI*2);
+        ctx.arc(w/2 - padding, -h/2 + padding, 2, 0, Math.PI*2);
+        ctx.arc(-w/2 + padding, h/2 - padding, 2, 0, Math.PI*2);
+        ctx.arc(w/2 - padding, h/2 - padding, 2, 0, Math.PI*2);
+        ctx.fill();
+
+        ctx.shadowColor = "black";
+        ctx.shadowBlur = 4;
+        ctx.fillStyle = "#FFD700";
+        ctx.font = "bold 24px 'Courier New', monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(text, 0, 0);
+
+        ctx.restore();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+        if (img.complete) {
+            const scale = Math.max(canvasWidth / img.width, canvasHeight / img.height) * 1.1;
+            const w = img.width * scale;
+            const h = img.height * scale;
+            const offsetX = (canvasWidth - w) / 2 - (mouse.x * 20);
+            const offsetY = (canvasHeight - h) / 2 - (mouse.y * 20);
+            ctx.drawImage(img, offsetX, offsetY, w, h);
+        }
+
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.8)";
+        ctx.shadowBlur = 15;
+        ctx.font = "bold 90px 'Georgia', serif";
+        ctx.textAlign = "center";
+
+        ctx.strokeStyle = "#3e1f0a";
+        ctx.lineWidth = 12;
+        ctx.strokeText("JUNGLE QUEST", canvasWidth / 2, canvasHeight * 0.35);
+
+        const titleGrad = ctx.createLinearGradient(0, canvasHeight*0.2, 0, canvasHeight*0.4);
+        titleGrad.addColorStop(0, "#d4a373");
+        titleGrad.addColorStop(1, "#8B4513");
+        ctx.fillStyle = titleGrad;
+        ctx.fillText("JUNGLE QUEST", canvasWidth / 2, canvasHeight * 0.35);
+        ctx.restore();
+
+        drawWoodPanel(canvasWidth / 2, canvasHeight * 0.65, 220, 60, "START GAME", hoveredBtn === 'start');
+        drawWoodPanel(canvasWidth / 2, canvasHeight * 0.78, 220, 60, "HOW TO PLAY", hoveredBtn === 'howtoplay');
+    }
+
+    function animate() {
+        draw();
+        requestAnimationFrame(animate);
+    }
+
+    img.onload = init;
+    img.onerror = init; // Still run init even if image fails to load
+</script>
 </body>
 </html>

@@ -1,35 +1,28 @@
 class Game {
-
     constructor(ctx, player) {
-
         this.ctx = ctx;
-        // Array stores players, enemies, collectables...
-        this.objects = [player];
-        // Track keyboard inputs (ENTER, SPACE)
+        this.objects = [player]; // Player is first
         this.keys = {};
-        // Key is pressed
+
+        // Keyboard input
         window.addEventListener("keydown", e => this.keys[e.code] = true);
-        // Key is released
         window.addEventListener("keyup", e => this.keys[e.code] = false);
     }
 
-    // Runs every animation frame
     nextFrame = () => {
-        // Clear canvas before drawing next frame
+        // Clear canvas
         this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-        // Update and draw every object in the game
+        // Update & draw all objects
         this.objects.forEach(obj => {
-            // Read input, size, gravity...
-            obj.update(this);
-            // Draw object
+            // Pass player as second argument so collisions can check player state
+            obj.update(this, this.objects[0]);
             obj.draw();
         });
-        // Run on next screen refresh again
+
         requestAnimationFrame(this.nextFrame);
     }
 
-    // Starts the game
     start() {
         this.nextFrame();
     }

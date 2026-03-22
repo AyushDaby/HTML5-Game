@@ -1,75 +1,174 @@
 class Player {
-
     constructor(ctx) {
-
         this.ctx = ctx;
-        // Starting position
-        this.x = 100;
-        this.y = 250;
-        // Size of sprite
-        this.width  = 200;
+
+        // Position & size
+        this.x = 300;
+        this.y = 450;
+        this.width = 200;
         this.height = 200;
-        // Vertical speed
-        this.spdY = 0;
-        // Gravity constantly pulls down (+ve)
-        this.gravity = 0.5;
-        // Flapping force pushes upwards (-ve)
-        this.flapPower = -8;
-        // Animation state
+        this.speed = 5;
+
+        // Animation setup (5x5)
+        this.rows = 5;
+        this.cols = 5;
+        this.totalFrames = this.rows * this.cols;
+
         this.frameIndex = 0;
-        this.frameTimer  = 0;
-        // Spritesheet frame size
-        this.spriteWidth = 768;
-        this.spriteHeight = 768;
-        // Load spritesheet image
-        this.sprite = new Image();
-        this.sprite.src = "./assets/parakeet.png";
+        this.frameTimer = 0;
+
+        // Sprite size
+        this.spriteWidth = 3050;
+        this.spriteHeight = 2635;
+        this.frameWidth = this.spriteWidth / this.cols;
+        this.frameHeight = this.spriteHeight / this.rows;
+
+        // Sprites
+        this.sprites = {
+            fly: new Image(),
+            attack: new Image(),
+            damage: new Image()
+        };
+        this.sprites.fly.src = "./assets/parakeet_fly.png";
+        this.sprites.attack.src = "./assets/parakeet_attack.png";
+        this.sprites.damage.src = "./assets/parakeet_damage.png";
+
+        // State
+        this.state = "fly";
+        this.currentSprite = this.sprites.fly;
+
+        // Projectiles
+        this.projectiles = [];
+
+        // Timers
+        this.flickerTimerMax = 12; // frames for initial flicker
+        this.flickerTimer = 0;
+        this.damageTimerMax = 20;
+        this.stateTimer = 0;
     }
 
-    // Update player
+    setState(newState) {
+        if (this.state !== newState) {
+            if (newState === "attack") {
+                // Start flicker at beginning of attack
+                this.flickerTimer = this.flickerTimerMax;
+            }
+
+            if (newState === "damage") {
+                this.stateTimer = this.damageTimerMax;
+            }
+
+            this.state = newState;
+            this.currentSprite = this.sprites[newState];
+            this.frameIndex = 0;
+            this.frameTimer = 0;
+        }
+    }
+
     update(game) {
+        // Movement
+        if (game.keys["ArrowUp"]) this.y -= this.speed;
+        if (game.keys["ArrowDown"]) this.y += this.speed;
 
-        // Apply gravity and vertical speed
-        this.spdY += this.gravity;
-        this.y += this.spdY;
+        // Keep in bounds
+        this.y = Math.max(this.height / 2, Math.min(game.height - this.height / 2, this.y));
+        this.x = Math.max(this.width / 2, Math.min(game.width - this.width / 2, this.x));
 
-        // Set boundaries
-        this.y = Math.min(
-            Math.max(this.height / 2, this.y), // Top limit
-            game.height - this.height / 2             // Bottom limit
-        );
+        // COLLISIONS
+        game.objects.forEach(obj => {
+            if (obj === this) return;
 
-        // Flaps when [SPACE] is pressed
-        if (game.keys["Space"]) {
-            //Apply upward force
-            this.spdY = this.flapPower;
+            // Collectable triggers attack only if currently in fly
+            if (obj.type === "collectable" && this.state === "fly") {
+                if (this.isColliding(obj)) {
+                    this.setState("attack");
+                    obj.x = -100; // remove collectable
+                }
+            }
+
+            // Bullet triggers damage immediately
+            if (obj.type === "bullet" && this.isColliding(obj)) {
+                this.setState("damage");
+            }
+        });
+
+        // STATE LOGIC
+        if (this.state === "attack") {
+            // Shoot only when SPACE pressed
+            if (game.keys["Space"] && this.frameTimer % 10 === 0) {
+                this.projectiles.push({
+                    x: this.x + this.width / 2,
+                    y: this.y,
+                    width: 15,
+                    height: 15,
+                    speed: 8
+                });
+            }
         }
 
-        // Handle animation timing
-        this.frameTimer++;
+        if (this.state === "damage") {
+            this.stateTimer--;
+            if (this.stateTimer <= 0) {
+                this.setState("fly");
+            }
+        }
 
-        // Change frame every 10 updates
-        if (this.frameTimer % 10 === 0) {
-            // Toggle between frame 0 and 1
-            this.frameIndex = (this.frameIndex + 1) % 2;
+        // Update projectiles
+        this.projectiles.forEach(p => p.x += p.speed);
+        this.projectiles = this.projectiles.filter(p => p.x < game.width);
+
+        // Animation
+        this.frameTimer++;
+        if (this.frameTimer % 8 === 0) {
+            this.frameIndex = (this.frameIndex + 1) % this.totalFrames;
+        }
+
+        // Flicker countdown
+        if (this.flickerTimer > 0) {
+            this.flickerTimer--;
         }
     }
 
-    // Draw player
-    draw() {
-        // Horizontal frame
-        const sx = this.frameIndex * this.spriteWidth;
+    isColliding(obj) {
+        return (
+            this.x < obj.x + obj.width &&
+            this.x + this.width > obj.x &&
+            this.y < obj.y + obj.height &&
+            this.y + this.height > obj.y
+        );
+    }
 
-        // Vertical frame
-        const sy = 0;
+    draw() {
+        let spriteToDraw = this.currentSprite;
+
+        // Smooth flicker at attack start
+        if (this.state === "attack" && this.flickerTimer > 0) {
+            // Smooth toggle every 3 frames for subtle effect
+            if (Math.floor(this.flickerTimer / 6) % 2 === 0) {
+                spriteToDraw = this.sprites.fly;
+            }
+        }
+
+        const row = Math.floor(this.frameIndex / this.cols);
+        const col = this.frameIndex % this.cols;
+        const sx = col * this.frameWidth;
+        const sy = row * this.frameHeight;
 
         this.ctx.drawImage(
-            this.sprite,
+            spriteToDraw,
             sx, sy,
-            this.spriteWidth, this.spriteHeight,
-            this.x - this.width / 2, this.y - this.height / 2,
-            this.width, this.height
+            this.frameWidth, this.frameHeight,
+            this.x - this.width / 2,
+            this.y - this.height / 2,
+            this.width,
+            this.height
         );
+
+        // Draw projectiles
+        this.projectiles.forEach(p => {
+            this.ctx.fillStyle = "blue";
+            this.ctx.fillRect(p.x, p.y - p.height / 2, p.width, p.height);
+        });
     }
 }
 
